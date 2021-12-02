@@ -171,7 +171,7 @@ result = doudian.request(path=path, method=method, params=params)
 ```
 
 ### init_token(code: str) ###
-用于初始化或重置access token，通常情况下无需手工调用，仅当以下场景是才需要：
+用于初始化或重置access token，通常情况下无需手工调用，仅当以下场景时才需要：
 1. 工具型（AppType.TOOL）应用初始化DouDian的时候未传入code，可在获取到code时调用；
 2. 工具型（AppType.TOOL）或自用型（AppType.SELF）应用需要强制重置access token时调用;
 3. 捕获到TokenError异常时调用。
