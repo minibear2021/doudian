@@ -35,6 +35,7 @@ class DouDian():
             self._gate_way = 'https://openapi-fxg.jinritemai.com'
         self._version = 2
         self._token = None
+        self._sign_method = 'hmac-sha256'
         if self._token_file:
             try:
                 with open(self._token_file) as f:
@@ -100,7 +101,7 @@ class DouDian():
                 if self._logger:
                     self._logger.exception('shop_id is not assigned.')
                 raise ShopIdError('shop_id is not assigned.')
-        result = self._request(path=path, method=method, params=params)
+        result = self._request(path=path, method=method, params=params, token_request=True)
         if result and result.get('err_no') == 0 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
@@ -128,7 +129,7 @@ class DouDian():
         params = {}
         params.update({'grant_type': grant_type})
         params.update({'refresh_token': refresh_token})
-        result = self._request(path=path, method=method, params=params, token=True)
+        result = self._request(path=path, method=method, params=params, token_request=True)
         if result and result.get('err_no') == 0 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
@@ -136,7 +137,7 @@ class DouDian():
                 with open(self._token_file, mode='w') as f:
                     f.write(json.dumps(self._token))
 
-    def _request(self, path: str, method: str, params: dict, token: bool = False) -> json:
+    def _request(self, path: str, method: str, params: dict, token_request: bool = False) -> json:
         try:
             headers = {}
             headers.update({'Content-Type': 'application/json'})
@@ -145,18 +146,18 @@ class DouDian():
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             param_json = json.dumps(params, sort_keys=True, separators=(',', ':'))
             sign = self._sign(method=method, param_json=param_json, timestamp=timestamp)
-            if token:
-                url = self._gate_way + '{}?app_key={}&method={}&param_json={}&timestamp={}&v={}&sign={}'.format(
-                    path, self._app_key, method, param_json, timestamp, self._version, sign)
+            if token_request:
+                url = self._gate_way + '{}?app_key={}&method={}&param_json={}&timestamp={}&v={}&sign_method={}&sign={}'.format(
+                    path, self._app_key, method, param_json, timestamp, self._version, self._sign_method, sign)
             else:
-                token = self._access_token()
-                url = self._gate_way + '{}?app_key={}&method={}&access_token={}&param_json=\{\}&timestamp={}&v={}&sign={}'.format(
-                    path, self._app_key, method, token, timestamp, self._version, sign)
+                access_token = self._access_token()
+                url = self._gate_way + '{}?app_key={}&method={}&access_token={}&param_json={}&timestamp={}&v={}&sign_method={}&sign={}'.format(
+                    path, self._app_key, method, access_token, param_json, timestamp, self._version, self._sign_method, sign)
             if self._logger:
-                self._logger.debug('Request url: {}'.format(self._gate_way + path))
+                self._logger.debug('Request url: {}'.format(url))
                 self._logger.debug('Request headers: {}'.format(headers))
                 self._logger.debug('Request params: {}'.format(param_json))
-            response = requests.post(url=self._gate_way + path, data=param_json, headers=headers, proxies=self._proxy)
+            response = requests.post(url=url, data=param_json, headers=headers, proxies=self._proxy)
             if self._logger:
                 self._logger.debug('Response status code: {}'.format(response.status_code))
                 self._logger.debug('Response headers: {}'.format(response.headers))
