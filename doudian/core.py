@@ -2,7 +2,6 @@
 import json
 import time
 from datetime import datetime
-from enum import Enum, unique
 from logging import Logger
 
 import requests
@@ -10,15 +9,14 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.hashes import MD5, SHA256, Hash
 from cryptography.hazmat.primitives.hmac import HMAC
 
-
-@unique
-class AppType(Enum):
-    SELF = 'SELF'
-    TOOL = 'TOOL'
+from .exception import CodeError, ShopIdError, TokenError
+from .type import AppType
 
 
 class DouDian():
-    def __init__(self, app_key: str, app_secret: str, app_type: AppType = AppType.SELF, code=None, shop_id: str = None, token_file: str = None, logger: Logger = None, proxy: str = None):
+    def __init__(self, app_key: str, app_secret: str, app_type: AppType = AppType.SELF, code=None, shop_id: str = None, token_file: str = None, logger: Logger = None, proxy: str = None, test_mode=False):
+        """初始化DouDian实例，自用型应用传入shop_id用于初始化access token，工具型应用传入code换取access token（如初始化时未传入，可以在访问抖店API之前调用init_token(code)进行token的初始化。
+        """
         self._app_key = app_key
         self._app_secret = app_secret
         self._app_type = app_type
@@ -27,10 +25,14 @@ class DouDian():
         if self._app_type == AppType.SELF and not shop_id:
             if self._logger:
                 self._logger.exception('shop_id is not assigned.')
-            raise Exception('shop_id is not assigned.')
+            raise ShopIdError('shop_id is not assigned.')
         self._shop_id = shop_id
         self._proxy = proxy
-        self._gate_way = 'https://openapi-fxg.jinritemai.com'
+        self._test_mode = test_mode
+        if self._test_mode:
+            self._gate_way = 'https://openapi-sandbox.jinritemai.com'
+        else:
+            self._gate_way = 'https://openapi-fxg.jinritemai.com'
         self._version = 2
         self._token = None
         if self._token_file:
@@ -65,7 +67,7 @@ class DouDian():
         if not self._token:
             if self._logger:
                 self._logger.exception('no token info, call init_token() to initialize it.')
-            raise Exception('no token info, call init_token() to initialize it.')
+            raise TokenError('no token info, call init_token() to initialize it.')
         try:
             if self._token.get('expires_in') - int(time.time()) < 3000:
                 self._refresh_token()
@@ -82,15 +84,22 @@ class DouDian():
         if self._app_type == AppType.TOOL and not code:
             if self._logger:
                 self._logger.exception('code is not assigned.')
-            raise Exception('code is not assigned.')
+            raise CodeError('code is not assigned.')
         method = 'token.create'
         path = '/token/create'
         grant_type = 'authorization_self' if self._app_type == AppType.SELF else 'authorization_code'
         params = {}
-        params.update({'code': code})
+        params.update({'code': code if code else ''})
         params.update({'grant_type': grant_type})
-        if self._shop_id and self._app_type == AppType.SELF:
-            params.update({'shop_id': self._shop_id})
+        if self._app_type == AppType.SELF:
+            if self._test_mode:
+                params.update({'test_shop': '1'})
+            elif self._shop_id:
+                params.update({'shop_id': self._shop_id})
+            else:
+                if self._logger:
+                    self._logger.exception('shop_id is not assigned.')
+                raise ShopIdError('shop_id is not assigned.')
         result = self._request(path=path, method=method, params=params)
         if result and result.get('err_no') == 0 and result.get('data'):
             self._token = result.get('data')

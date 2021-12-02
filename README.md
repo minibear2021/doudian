@@ -20,7 +20,8 @@
 1. 自动维护access_token的更新；
 2. 支持本地缓存access_token；
 3. 业务参数自动排序，无需预处理；
-4. 消息推送自动验证，自动解析。
+4. 消息推送自动验证，自动解析；
+5. 支持沙箱环境[测试店铺](https://op.jinritemai.com/docs/guide-docs/129/209)。
 
 ## 源码
 
@@ -55,11 +56,11 @@ APP_KEY = '3409409348479354011'
 # 应用密钥 字符串
 APP_SECRET = '2ad2355c-01d0-11f8-91dc-05a8cd1054b1'
 
-# 店铺ID，仅自用型应用有效
+# 店铺ID，自用型应用必传。
 SHOP_ID = '323423'
 
 # token缓存文件
-TOKEN_FILE = './token'
+TOKEN_FILE = './323423.token'
 
 # 日志记录器，记录web请求和回调细节
 logging.basicConfig(filename=os.path.join(os.getcwd(), 'demo.log'), level=logging.DEBUG, filemode='a', format='%(asctime)s - %(process)s - %(levelname)s: %(message)s')
@@ -67,6 +68,9 @@ LOGGER = logging.getLogger("demo")
 
 # 代理设置，None或者{"https": "http://10.10.1.10:1080"}，详细格式参见https://docs.python-requests.org/zh_CN/latest/user/advanced.html
 PROXY = None
+
+# 沙箱模式测试店铺
+TEST_MODE = False
 ```
 
 接下来初始化DouDian实例并配置一个合适的接口：
@@ -79,7 +83,8 @@ doudian = DouDian(
     shop_id=SHOP_ID,
     token_file=TOKEN_FILE,
     logger=LOGGER,
-    proxy=PROXY
+    proxy=PROXY,
+    test_mode=TEST_MODE
 )
 
 app = Flask(__name__)
@@ -149,7 +154,8 @@ def notify():
 
 ## 通用接口
 
-**doudian.request()**是一个通用接口，所有抖店的API调用都通过此接口进行。接口需要传入三个参数，分别是path、method和params。
+### request(path: str, method: str, params: dict) ###
+所有抖店的API调用都通过**doudian.request()**接口进行。此接口需要传入三个参数，分别是path、method和params。
 参数值参照官方文档组织，形式类似下面的代码，其中params只需要传入请求参数或业务参数，公共参数无需传入，SDK内部会自行处理：
 ![image](param.png)
 ```python
@@ -161,7 +167,31 @@ params.update({'start_time': '2021/10/12 00:00:00'})
 params.update({'end_time': '2021/10/12 00:00:00'})
 params.update({'page':1})
 params.update({'size':50})
+result = doudian.request(path=path, method=method, params=params)
 ```
+
+### init_token(code: str) ###
+用于初始化或重置access token，通常情况下无需手工调用，仅当以下场景是才需要：
+1. 工具型（AppType.TOOL）应用初始化DouDian的时候未传入code，可在获取到code时调用；
+2. 工具型（AppType.TOOL）或自用型（AppType.SELF）应用需要强制重置access token时调用;
+3. 捕获到TokenError异常时调用。
+
+### callback(headers: dict, body: bytes) ###
+抖店消息推送解析验证接口，将收到的推送headers和body原样传入，接口内自动解析并验证。
+
+```python
+result = doudian.callback(request.headers, request.data)
+```
+
+### build_auth_url(service_id: str, state: str) ###
+工具型应用授权url构造接口，生成的授权url发送给商户完成授权验证以获取code。获取到的code可以调用init_token(code)接口进行access token的初始化或重置。
+
+```python
+service_id = 'demo service id'
+state = 'demo state'
+result = doudian.build_auth_url(service_id=service_id, state=state)
+```
+以上接口的调用示例可以参考[examples.py](examples.py)。
 
 ### 接口函数参数
 

@@ -19,11 +19,11 @@ APP_KEY = '3409409348479354011'
 # 应用密钥 字符串
 APP_SECRET = '2ad2355c-01d0-11f8-91dc-05a8cd1054b1'
 
-# 店铺ID，仅自用型应用需要
+# 店铺ID，自用型应用必传。
 SHOP_ID = '323423'
 
 # token缓存文件
-TOKEN_FILE = './token'
+TOKEN_FILE = './323423.token'
 
 # 日志记录器，记录API请求和推送消息细节
 logging.basicConfig(filename=os.path.join(os.getcwd(), 'demo.log'), level=logging.DEBUG, filemode='a', format='%(asctime)s - %(process)s - %(levelname)s: %(message)s')
@@ -31,6 +31,9 @@ LOGGER = logging.getLogger("demo")
 
 # 代理设置，None或者{"https": "http://10.10.1.10:1080"}，详细格式参见https://docs.python-requests.org/zh_CN/latest/user/advanced.html
 PROXY = None
+
+# 沙箱模式测试店铺
+TEST_MODE = False
 
 # 初始化
 doudian = DouDian(
@@ -40,7 +43,8 @@ doudian = DouDian(
     shop_id=SHOP_ID,
     token_file=TOKEN_FILE,
     logger=LOGGER,
-    proxy=PROXY
+    proxy=PROXY,
+    test_mode=TEST_MODE
 )
 
 app = Flask(__name__)
