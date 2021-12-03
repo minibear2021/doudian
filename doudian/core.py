@@ -86,7 +86,6 @@ class DouDian():
             if self._logger:
                 self._logger.exception('code is not assigned.')
             raise CodeError('code is not assigned.')
-        method = 'token.create'
         path = '/token/create'
         grant_type = 'authorization_self' if self._app_type == AppType.SELF else 'authorization_code'
         params = {}
@@ -101,7 +100,7 @@ class DouDian():
                 if self._logger:
                     self._logger.exception('shop_id is not assigned.')
                 raise ShopIdError('shop_id is not assigned.')
-        result = self._request(path=path, method=method, params=params, token_request=True)
+        result = self._request(path=path, params=params, token_request=True)
         if result and result.get('err_no') == 0 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
@@ -122,14 +121,13 @@ class DouDian():
             return None
 
     def _refresh_token(self) -> None:
-        method = 'token.refresh'
         path = '/token/refresh'
         refresh_token = self._get_refresh_token()
         grant_type = 'refresh_token'
         params = {}
         params.update({'grant_type': grant_type})
         params.update({'refresh_token': refresh_token})
-        result = self._request(path=path, method=method, params=params, token_request=True)
+        result = self._request(path=path, params=params, token_request=True)
         if result and result.get('err_no') == 0 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
@@ -137,7 +135,7 @@ class DouDian():
                 with open(self._token_file, mode='w') as f:
                     f.write(json.dumps(self._token))
 
-    def _request(self, path: str, method: str, params: dict, token_request: bool = False) -> json:
+    def _request(self, path: str, params: dict, token_request: bool = False) -> json:
         try:
             headers = {}
             headers.update({'Content-Type': 'application/json'})
@@ -145,6 +143,7 @@ class DouDian():
             headers.update({'User-Agent': 'doudian python sdk(https://github.com/minibear2021/doudian)'})
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             param_json = json.dumps(params, sort_keys=True, separators=(',', ':'))
+            method = path[1:].replace('/', '.')
             sign = self._sign(method=method, param_json=param_json, timestamp=timestamp)
             if token_request:
                 url = self._gate_way + '{}?app_key={}&method={}&param_json={}&timestamp={}&v={}&sign_method={}&sign={}'.format(
@@ -170,13 +169,12 @@ class DouDian():
                 self._logger.exception('{}'.format(e))
             return None
 
-    def request(self, path: str, method: str, params: dict) -> json:
+    def request(self, path: str, params: dict) -> json:
         """请求抖店API接口
         :param path: 调用的API接口地址，示例：'/material/uploadImageSync'
-        :param method: 调用的API接口名称，示例：'material.uploadImageSync'
         :param params: 业务参数字典，示例：{'folder_id':'70031975314169695161250','url':'http://www.demo.com/demo.jpg','material_name':'demo.jpg'}
         """
-        return self._request(path=path, method=method, params=params)
+        return self._request(path=path, params=params)
 
     def callback(self, headers: dict, body: bytes) -> json:
         """验证处理消息推送服务收到信息

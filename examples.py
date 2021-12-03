@@ -33,7 +33,8 @@ LOGGER = logging.getLogger("demo")
 PROXY = None
 
 # 沙箱模式测试店铺
-TEST_MODE = False
+# https://op.jinritemai.com/docs/guide-docs/129/209
+TEST_MODE = True
 
 # 初始化
 doudian = DouDian(
@@ -50,20 +51,26 @@ doudian = DouDian(
 app = Flask(__name__)
 
 
+@app.route('/brandList')
+def brand_list():
+    # 以获取店铺的已授权品牌列表为例，参照官方文档，将path和params拼凑好传入request接口，调用成功后即可获取店铺的已授权品牌列表数据。
+    # https://op.jinritemai.com/docs/api-docs/13/54
+    path = '/shop/brandList'
+    params = {}
+    result = doudian.request(path=path, params=params)
+    return jsonify({'result': result if result else ''})
+
+
 @app.route('/orderList')
 def order_list():
-    # 以会员订单列表查询为例，参照官方文档，将path、method、params三个参数拼凑好传入request接口，调用成功后即可获取会员订单数据。
+    # 以会员订单列表查询为例，参照官方文档，将path和params拼凑好传入request接口，调用成功后即可获取会员订单数据。
     # https://op.jinritemai.com/docs/api-docs/13/366
     path = '/member/searchList'
-    method = 'member.searchList'
     params = {}
     params.update({'start_time': '2021/10/12 00:00:00'})
-    params.update({'end_time': '2021/10/12 00:00:00'})
-    result = doudian.request(path=path, method=method, params=params)
-    if result and result.get('err_no') == 0:
-        return jsonify({'data': result.get('data')})
-    else:
-        return jsonify({'data': ''})
+    params.update({'end_time': '2021/10/13 00:00:00'})
+    result = doudian.request(path=path, params=params)
+    return jsonify({'result': result if result else ''})
 
 
 @app.route('/notify', methods=['POST'])
@@ -90,10 +97,7 @@ def authUrl():
     service_id = 'demo service id'
     state = 'demo state'
     result = doudian.build_auth_url(service_id=service_id, state=state)
-    if result:
-        return jsonify({'code': 0, 'msg': result})
-    else:
-        return jsonify({'data': -1, 'msg': '生成授权url失败'})
+    return jsonify({'result': result if result else ''})
 
 
 if __name__ == '__main__':
