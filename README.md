@@ -1,7 +1,7 @@
 # 抖店 Python SDK
 
 [![PyPI version](https://badge.fury.io/py/doudian.svg)](https://badge.fury.io/py/doudian)
-[![Download count](https://img.shields.io/pypi/dw/doudian)](https://img.shields.io/pypi/dw/doudian)
+[![Download count](https://img.shields.io/pypi/dm/doudian)](https://img.shields.io/pypi/dm/doudian)
 
 ## 介绍
 
