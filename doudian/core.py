@@ -39,7 +39,7 @@ class DouDian():
         if self._token_file:
             try:
                 with open(self._token_file) as f:
-                    self._token = f.read()
+                    self._token = json.load(f)
             except Exception as e:
                 if self._logger:
                     self._logger.exception('{}'.format(e))

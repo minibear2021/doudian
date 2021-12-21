@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf8") as f:
 
 setup(
     name="doudian",
-    version="0.4",
+    version="0.5",
     author="minibear",
     description="抖店 Python SDK(doudian python sdk)",
     long_description=long_description,
