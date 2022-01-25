@@ -150,8 +150,8 @@ class DouDian():
                     path, self._app_key, method, param_json, timestamp, self._version, self._sign_method, sign)
             else:
                 access_token = self._access_token()
-                url = self._gate_way + '{}?app_key={}&method={}&access_token={}&param_json={}&timestamp={}&v={}&sign_method={}&sign={}'.format(
-                    path, self._app_key, method, access_token, param_json, timestamp, self._version, self._sign_method, sign)
+                url = self._gate_way + '{}?app_key={}&method={}&access_token={}&timestamp={}&v={}&sign_method={}&sign={}'.format(
+                    path, self._app_key, method, access_token, timestamp, self._version, self._sign_method, sign)
             if self._logger:
                 self._logger.debug('Request url: {}'.format(url))
                 self._logger.debug('Request headers: {}'.format(headers))
