@@ -101,7 +101,7 @@ class DouDian():
                     self._logger.exception('shop_id is not assigned.')
                 raise ShopIdError('shop_id is not assigned.')
         result = self._request(path=path, params=params, token_request=True)
-        if result and result.get('err_no') == 0 and result.get('data'):
+        if result and result.get('code') == 10000 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
             if self._token_file:
@@ -128,7 +128,7 @@ class DouDian():
         params.update({'grant_type': grant_type})
         params.update({'refresh_token': refresh_token})
         result = self._request(path=path, params=params, token_request=True)
-        if result and result.get('err_no') == 0 and result.get('data'):
+        if result and result.get('code') == 10000 and result.get('data'):
             self._token = result.get('data')
             self._token.update({'expires_in': int(time.time()) + result.get('data').get('expires_in')})
             if self._token_file:
